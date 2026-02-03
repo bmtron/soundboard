@@ -137,6 +137,12 @@ void play_soundfile(AudioData* data) {
         local_data->sample_rate = data->sample_rate;
         local_data->current_frame = 0;
 
+        AudioData* user_local_data = malloc(sizeof(AudioData));
+        user_local_data->samples = data->samples;
+        user_local_data->total_frames = data->total_frames;
+        user_local_data->sample_rate = data->sample_rate;
+        user_local_data->current_frame = 0;
+
         int soundboard_device = soundboard_sink_setup();
         if (soundboard_device == -1) {
                 printf("Error setting up soundboard sink.\n");
@@ -154,13 +160,36 @@ void play_soundfile(AudioData* data) {
             Pa_OpenStream(&stream, NULL, &outputParams, local_data->sample_rate,
                           2048, paNoFlag, paCallback, local_data);
         register_stream(stream);
+
         if (err != paNoError) {
                 printPaError(err);
         }
+        PaStream* user_stream;
+        PaStreamParameters user_out_params;
+        user_out_params.device = Pa_GetDefaultOutputDevice();
+        user_out_params.channelCount = 1;
+        user_out_params.sampleFormat = paFloat32;
+        user_out_params.suggestedLatency =
+            Pa_GetDeviceInfo(Pa_GetDefaultOutputDevice())
+                ->defaultLowOutputLatency;
+        user_out_params.hostApiSpecificStreamInfo = NULL;
+
+        err = Pa_OpenStream(&user_stream, NULL, &user_out_params,
+                            user_local_data->sample_rate, 2048, paNoFlag, paCallback,
+                            user_local_data);
+        if (err != paNoError) {
+            printPaError(err);
+        }
+
+        register_stream(user_stream);
 
         err = Pa_StartStream(stream);
         if (err != paNoError) {
                 printPaError(err);
+        }
+        err = Pa_StartStream(user_stream);
+        if (err != paNoError) {
+            printPaError(err);
         }
 
         long sleep_time =
@@ -175,11 +204,24 @@ void play_soundfile(AudioData* data) {
                 }
         }
 
+        if (Pa_IsStreamActive(user_stream)) {
+            err = Pa_StopStream(user_stream);
+            if (err != paNoError) {
+                printPaError(err);
+            }
+        }
+
         err = Pa_CloseStream(stream);
         if (err != paNoError) {
                 printPaError(err);
         }
+        err = Pa_CloseStream(user_stream);
+        if (err != paNoError) {
+            printPaError(err);
+        }
+
         unregister_stream(stream);
+        unregister_stream(user_stream);
 }
 
 pthread_mutex_t streams_mutex = PTHREAD_MUTEX_INITIALIZER;
