@@ -9,6 +9,7 @@ extern GtkWidget* main_grid;
 
 int main(int argc, char** argv) {
         PaError err;
+        master_volume = 1.0f;
 
         err = Pa_Initialize();
         if (err != paNoError) {
@@ -26,6 +27,16 @@ int main(int argc, char** argv) {
         gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll),
                                        GTK_POLICY_AUTOMATIC,
                                        GTK_POLICY_AUTOMATIC);
+
+        GtkWidget* volume_label = gtk_label_new("Volume:");
+        GtkWidget* volume_slider = gtk_scale_new_with_range(
+            GTK_ORIENTATION_HORIZONTAL, 0.0, 1.0, 0.01);
+
+        gtk_scale_set_value_pos(GTK_SCALE(volume_slider), 1.0);
+        gtk_widget_set_size_request(volume_slider, 200, -1);
+
+        g_signal_connect(volume_slider, "value_changed",
+                         G_CALLBACK(on_volume_changed), NULL);
 
         GtkWidget* grid = gtk_grid_new();
         main_grid = grid;
@@ -46,14 +57,16 @@ int main(int argc, char** argv) {
                          G_CALLBACK(kill_sound_clicked), window);
         gtk_box_pack_start(GTK_BOX(vbox), load_btn, FALSE, FALSE, 0);
         gtk_box_pack_start(GTK_BOX(vbox), kill_sound_btn, FALSE, FALSE, 0);
+        gtk_box_pack_start(GTK_BOX(vbox), volume_label, FALSE, FALSE, 0);
+        gtk_box_pack_start(GTK_BOX(vbox), volume_slider, FALSE, FALSE, 0);
 
         gtk_widget_set_size_request(scroll, 400, 300);
         gtk_widget_set_size_request(grid, 400, 300);
 
         gtk_container_add(GTK_CONTAINER(scroll), grid);
+        
         gtk_box_pack_start(GTK_BOX(vbox), scroll, TRUE, TRUE, 0);
         gtk_container_add(GTK_CONTAINER(window), vbox);
-        ;
 
         gtk_widget_show_all(window);
         load_config();

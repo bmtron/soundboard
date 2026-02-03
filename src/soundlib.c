@@ -7,6 +7,8 @@
 int num_active_streams = 0;
 int active_streams_capacity = 0;
 PaStream** active_streams = NULL;
+float master_volume = 1.0f;
+
 AudioData load_wav(const char* filepath) {
         AudioData data = {NULL, 0, 0, 0};
         SF_INFO info = {0};
@@ -90,7 +92,7 @@ static int paCallback(const void* inputBuffer, void* outputBuffer,
         long to_copy =
             framesPerBuffer < remaining ? framesPerBuffer : remaining;
         for (long i = 0; i < to_copy; i++) {
-                out[i] = data->samples[data->current_frame + i];
+                out[i] = data->samples[data->current_frame + i] * master_volume;
         }
         data->current_frame += to_copy;
 
@@ -255,6 +257,7 @@ void unregister_stream(PaStream* stream) {
         pthread_mutex_unlock(&streams_mutex);
 }
 
+
 void kill_all_sounds() {
         for (int i = 0; i < num_active_streams; i++) {
                 Pa_StopStream(active_streams[i]);
@@ -263,4 +266,9 @@ void kill_all_sounds() {
         num_active_streams = 0;
 }
 
+void on_volume_changed(GtkRange *range, gpointer data)  {
+    master_volume = gtk_range_get_value(range);
+    printf("Volume changed to: %.2f\n", master_volume);
+}
 void kill_sound_clicked(GtkWidget* widget, gpointer data) { kill_all_sounds(); }
+

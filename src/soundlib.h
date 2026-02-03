@@ -13,11 +13,14 @@ typedef struct {
 extern PaStream** active_streams;
 extern int num_active_streams;
 extern int active_streams_capacity;
+extern float master_volume;
+
 void play_soundfile(AudioData* data);
 void register_stream(PaStream* stream);
 void unregister_stream(PaStream* stream);
 void kill_all_sounds();
 void kill_sound_clicked(GtkWidget* widget, gpointer data);
+void on_volume_changed(GtkRange* range, gpointer data);
 AudioData load_wav(const char* path);
 void printPaError(PaError err);
 
