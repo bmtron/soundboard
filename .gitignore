@@ -1,0 +1,5 @@
+obj/
+bin/
+.cache/
+soundboard_audio.sh
+compile_commands.json
