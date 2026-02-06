@@ -197,6 +197,9 @@ void play_soundfile(AudioData* data) {
         long sleep_time =
             local_data->total_frames / (long)local_data->sample_rate;
 
+        if (local_data->total_frames % (long)local_data->sample_rate != 0) {
+            sleep_time++;
+        }
         Pa_Sleep(sleep_time * 1000);
 
         if (Pa_IsStreamActive(stream)) {
